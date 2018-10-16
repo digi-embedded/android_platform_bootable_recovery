@@ -15,6 +15,7 @@
  */
 
 #include <bootloader_message/bootloader_message.h>
+#include <bootloader_message/bootloader_settings.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -124,6 +125,44 @@ std::string get_bootloader_message_blk_device(std::string* err) {
   return misc_blk_device;
 }
 
+bool read_bootloader_message_from_ubootenv(bootloader_message* out) {
+  char buff[128];
+
+  if (!get_setting_value(BOOT_RECOVERY_SETTING, buff, sizeof(buff))) {
+    /*
+     * "boot-recovery" is the value used by Android to indicate boot to recovery,
+     * however Digi U-Boot uses "yes" in this value to boot into recovery.
+     */
+     if (!strcmp(buff, "yes"))
+       strcpy(buff, "boot-recovery");
+
+     strlcpy(out->command, buff, sizeof(out->command));
+  }
+
+  if (!get_setting_value(RECOVERY_STATUS_SETTING, buff, sizeof(buff)))
+    strlcpy(out->status, buff, sizeof(out->status));
+
+  if (!get_setting_value(RECOVERY_COMMAND_SETTING, buff, sizeof(buff)))
+    strlcpy(out->recovery, buff, sizeof(out->recovery));
+
+  if (!get_setting_value(RECOVERY_STAGE_SETTING, buff, sizeof(buff)))
+    strlcpy(out->stage, buff, sizeof(out->stage));
+
+  return true;
+}
+
+bool write_bootloader_message_to_ubootenv(const bootloader_message& in) {
+  int error = 0;
+  const char *command = strcmp(in.command, "boot-recovery") ? "" : "yes";
+
+  error |= set_setting_value(BOOT_RECOVERY_SETTING,    command);
+  error |= set_setting_value(RECOVERY_STATUS_SETTING,  in.status);
+  error |= set_setting_value(RECOVERY_COMMAND_SETTING, in.recovery);
+  error |= set_setting_value(RECOVERY_STAGE_SETTING,   in.stage);
+
+  return !error;
+}
+
 bool read_bootloader_message_from(bootloader_message* boot, const std::string& misc_blk_device,
                                   std::string* err) {
   return read_misc_partition(boot, sizeof(*boot), misc_blk_device,
@@ -132,10 +171,13 @@ bool read_bootloader_message_from(bootloader_message* boot, const std::string& m
 
 bool read_bootloader_message(bootloader_message* boot, std::string* err) {
   std::string misc_blk_device = get_misc_blk_device(err);
-  if (misc_blk_device.empty()) {
-    return false;
-  }
-  return read_bootloader_message_from(boot, misc_blk_device, err);
+
+  /* Try to read bootloader message from misc block device */
+  if (!misc_blk_device.empty() && read_bootloader_message_from(boot, misc_blk_device, err))
+    return true;
+
+  /* If previous methods failed, fallback to reading from the U-Boot Environment */
+  return read_bootloader_message_from_ubootenv(boot);
 }
 
 bool write_bootloader_message_to(const bootloader_message& boot, const std::string& misc_blk_device,
@@ -146,10 +188,13 @@ bool write_bootloader_message_to(const bootloader_message& boot, const std::stri
 
 bool write_bootloader_message(const bootloader_message& boot, std::string* err) {
   std::string misc_blk_device = get_misc_blk_device(err);
-  if (misc_blk_device.empty()) {
-    return false;
-  }
-  return write_bootloader_message_to(boot, misc_blk_device, err);
+
+  /* Try to write bootloader message to misc block device */
+  if (!misc_blk_device.empty() && write_bootloader_message_to(boot, misc_blk_device, err))
+     return true;
+
+  /* If previous methods failed, fallback to writting to the U-Boot Environment */
+  return write_bootloader_message_to_ubootenv(boot);
 }
 
 bool clear_bootloader_message(std::string* err) {

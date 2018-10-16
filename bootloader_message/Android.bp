@@ -16,7 +16,7 @@
 
 cc_library_static {
     name: "libbootloader_message",
-    srcs: ["bootloader_message.cpp"],
+    srcs: ["bootloader_message.cpp", "bootloader_settings.c"],
     cppflags: ["-Werror"],
     static_libs: [
         "libbase",

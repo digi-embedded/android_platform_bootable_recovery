@@ -336,7 +336,7 @@ static std::vector<std::string> get_args(const int argc, char** const argv) {
   if (args.size() == 1) {
     boot.recovery[sizeof(boot.recovery) - 1] = '\0';  // Ensure termination
     std::string boot_recovery(boot.recovery);
-    std::vector<std::string> tokens = android::base::Split(boot_recovery, "\n");
+    std::vector<std::string> tokens = android::base::Split(boot_recovery, " \n");
     if (!tokens.empty() && tokens[0] == "recovery") {
       for (auto it = tokens.begin() + 1; it != tokens.end(); it++) {
         // Skip empty and '\0'-filled tokens.

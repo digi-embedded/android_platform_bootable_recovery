@@ -862,13 +862,13 @@ Value* RebootNowFn(const char* name, State* state, const std::vector<std::unique
   // Zero out the 'command' field of the bootloader message. Leave the rest intact.
   bootloader_message boot;
   std::string err;
-  if (!read_bootloader_message_from(&boot, filename, &err)) {
-    LOG(ERROR) << name << "(): Failed to read from \"" << filename << "\": " << err;
+  if (!read_bootloader_message(&boot, &err)) {
+    LOG(ERROR) << name << "(): Failed to read bootloader message: " << err;
     return StringValue("");
   }
   memset(boot.command, 0, sizeof(boot.command));
-  if (!write_bootloader_message_to(boot, filename, &err)) {
-    LOG(ERROR) << name << "(): Failed to write to \"" << filename << "\": " << err;
+  if (!write_bootloader_message(boot, &err)) {
+    LOG(ERROR) << name << "(): Failed to write bootloader message: " << err;
     return StringValue("");
   }
 
@@ -911,13 +911,13 @@ Value* SetStageFn(const char* name, State* state, const std::vector<std::unique_
   // package installation.
   bootloader_message boot;
   std::string err;
-  if (!read_bootloader_message_from(&boot, filename, &err)) {
-    LOG(ERROR) << name << "(): Failed to read from \"" << filename << "\": " << err;
+  if (!read_bootloader_message(&boot, &err)) {
+    LOG(ERROR) << name << "(): Failed to read bootloader message: " << err;
     return StringValue("");
   }
   strlcpy(boot.stage, stagestr.c_str(), sizeof(boot.stage));
-  if (!write_bootloader_message_to(boot, filename, &err)) {
-    LOG(ERROR) << name << "(): Failed to write to \"" << filename << "\": " << err;
+  if (!write_bootloader_message(boot, &err)) {
+    LOG(ERROR) << name << "(): Failed to write bootloader message: " << err;
     return StringValue("");
   }
 
@@ -939,8 +939,8 @@ Value* GetStageFn(const char* name, State* state, const std::vector<std::unique_
 
   bootloader_message boot;
   std::string err;
-  if (!read_bootloader_message_from(&boot, filename, &err)) {
-    LOG(ERROR) << name << "(): Failed to read from \"" << filename << "\": " << err;
+  if (!read_bootloader_message(&boot, &err)) {
+    LOG(ERROR) << name << "(): Failed to read bootloader message: " << err;
     return StringValue("");
   }
 

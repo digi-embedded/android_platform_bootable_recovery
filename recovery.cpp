@@ -633,13 +633,9 @@ static int get_menu_selection(const char* const* headers, const char* const* ite
   while (chosen_item < 0) {
     int key = ui->WaitKey();
     if (key == -1) {  // WaitKey() timed out.
-      if (ui->WasTextEverVisible()) {
-        continue;
-      } else {
         LOG(INFO) << "Timed out waiting for key input; rebooting.";
         ui->EndMenu();
         return -1;
-      }
     }
 
     bool visible = ui->IsTextVisible();

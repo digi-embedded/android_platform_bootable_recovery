@@ -856,7 +856,6 @@ Value* RebootNowFn(const char* name, State* state, const std::vector<std::unique
   if (!ReadArgs(state, argv, &args)) {
     return ErrorAbort(state, kArgsParsingFailure, "%s(): Failed to parse the argument(s)", name);
   }
-  const std::string& filename = args[0];
   const std::string& property = args[1];
 
   // Zero out the 'command' field of the bootloader message. Leave the rest intact.
@@ -935,7 +934,6 @@ Value* GetStageFn(const char* name, State* state, const std::vector<std::unique_
   if (!ReadArgs(state, argv, &args)) {
     return ErrorAbort(state, kArgsParsingFailure, "%s() Failed to parse the argument(s)", name);
   }
-  const std::string& filename = args[0];
 
   bootloader_message boot;
   std::string err;

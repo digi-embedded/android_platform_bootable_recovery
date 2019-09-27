@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2011 The Android Open Source Project
- * Copyright (C) 2017 NXP
+ * Copyright 2017 NXP
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,6 +190,10 @@ void ScreenRecoveryUI::draw_foreground_locked() {
     int frame_height = gr_get_height(frame);
     int frame_x = (ScreenWidth() - frame_width) / 2;
     int frame_y = GetAnimationBaseline();
+    if (frame_x < 0)
+      frame_x = 0;
+    if (frame_y < 0)
+      frame_y = 0;
     DrawSurface(frame, 0, 0, frame_width, frame_height, frame_x, frame_y);
   }
 

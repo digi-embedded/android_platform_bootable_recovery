@@ -60,6 +60,8 @@ int ev_init(ev_callback input_cb, bool allow_touch_inputs) {
     return -1;
   }
 
+  sleep(2);
+
   bool epollctlfail = false;
   DIR* dir = opendir("/dev/input");
   if (dir != nullptr) {

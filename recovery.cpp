@@ -74,6 +74,9 @@
 #include "stub_ui.h"
 #include "ui.h"
 
+/* TF support */
+#include "trustfence_utils.h"
+
 static const struct option OPTIONS[] = {
   { "update_package", required_argument, NULL, 'u' },
   { "retry_count", required_argument, NULL, 'n' },
@@ -90,6 +93,7 @@ static const struct option OPTIONS[] = {
   { "wipe_ab", no_argument, NULL, 0 },
   { "wipe_package_size", required_argument, NULL, 0 },
   { "prompt_and_wipe_data", no_argument, NULL, 0 },
+  { "encryption_key", optional_argument, NULL, 'k' },
   { NULL, 0, NULL, 0 },
 };
 
@@ -147,6 +151,7 @@ struct selabel_handle* sehandle;
  *   --wipe_cache - wipe cache (but not user data), then reboot
  *   --set_encrypted_filesystem=on|off - enables / diasables encrypted fs
  *   --just_exit - do nothing; exit and reboot
+ *   --encryption_key=BASE_64_key - update file system encryption key
  *
  * After completing, we remove /cache/recovery/command and reboot.
  * Arguments may also be supplied in the bootloader control block (BCB).
@@ -1392,6 +1397,7 @@ int main(int argc, char **argv) {
                    [](const std::string& arg) { return const_cast<char*>(arg.c_str()); });
 
     const char *update_package = NULL;
+    const char *encryption_key = NULL;
     bool should_wipe_data = false;
     bool should_prompt_and_wipe_data = false;
     bool should_wipe_cache = false;
@@ -1404,6 +1410,7 @@ int main(int argc, char **argv) {
     bool shutdown_after = false;
     int retry_count = 0;
     bool security_update = false;
+    bool update_key = false;
 
     int arg;
     int option_index;
@@ -1421,6 +1428,11 @@ int main(int argc, char **argv) {
         case 'l': locale = optarg; break;
         case 'p': shutdown_after = true; break;
         case 'r': reason = optarg; break;
+        case 'k':
+            update_key = true;
+            if (optarg)
+                encryption_key = optarg;
+            break;
         case 'e': security_update = true; break;
         case 0: {
             std::string option = OPTIONS[option_index].name;
@@ -1587,6 +1599,20 @@ int main(int argc, char **argv) {
         ui->Print("\nInstall from ADB complete (status: %d).\n", status);
         if (sideload_auto_reboot) {
             ui->Print("Rebooting automatically.\n");
+        }
+    } else if (update_key) {
+        if (!setup_key(encryption_key)) {
+            // There is no way to dynamically change encryption key at the
+            // moment and maintain data, so wipe data partition every time the
+            // encryption key is set/changed.
+            if (!wipe_data(device)) {
+                status = INSTALL_ERROR;
+            }
+        } else {
+            status = INSTALL_ERROR;
+        }
+        if (status != INSTALL_SUCCESS) {
+            ui->Print("Key setup failed.\n");
         }
     } else if (!just_exit) {
         status = INSTALL_NONE;  // No command specified

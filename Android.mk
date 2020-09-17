@@ -79,6 +79,8 @@ LOCAL_SRC_FILES := \
     vr_ui.cpp \
     wear_ui.cpp \
     wear_touch.cpp \
+    trustfence_utils.c \
+    utils.c
 
 LOCAL_MODULE := recovery
 
